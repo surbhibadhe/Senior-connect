@@ -36,4 +36,8 @@ public interface ResourceRepository extends JpaRepository<Resource, Long> {
             @Param("search") String search,
             Pageable pageable
     );
+
+    Page<Resource> findByUploadedById(Long userId, Pageable pageable);
+
+    long countByUploadedById(Long userId);
 }

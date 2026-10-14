@@ -30,6 +30,12 @@ public class User {
 
     private String profilePicture;
 
+    @Column(length = 500)
+    private String bio;
+
+    @Column(length = 100)
+    private String department;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private Role role = Role.JUNIOR;
@@ -82,6 +88,26 @@ public class User {
 
     public void setRole(Role role) {
         this.role = role;
+    }
+
+    public String getBio() {
+        return bio;
+    }
+
+    public void setBio(String bio) {
+        this.bio = bio;
+    }
+
+    public String getDepartment() {
+        return department;
+    }
+
+    public void setDepartment(String department) {
+        this.department = department;
+    }
+
+    public boolean isProfileComplete() {
+        return department != null && !department.trim().isEmpty();
     }
 
     public LocalDateTime getCreatedAt() {

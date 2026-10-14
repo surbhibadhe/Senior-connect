@@ -29,6 +29,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -726,6 +727,108 @@ class ResourceServiceTest {
         ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
                 resourceService.getDownloadFile(50L));
         assertTrue(ex.getStatusCode() == HttpStatus.BAD_REQUEST || ex.getStatusCode() == HttpStatus.NOT_FOUND);
+    }
+
+    @Test
+    void getResourcesByContributor_success() {
+        when(userRepository.existsById(1L)).thenReturn(true);
+
+        Resource r1 = new Resource();
+        ReflectionTestUtils.setField(r1, "id", 101L);
+        r1.setTitle("Contributor Resource 1");
+        r1.setCategory(ResourceCategory.NOTES);
+        r1.setUploadedBy(juniorUser);
+
+        when(resourceRepository.findByUploadedById(eq(1L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(r1)));
+
+        PageResponse<ResourceResponse> response =
+                resourceService.getResourcesByContributor(1L, 0, 10, "newest");
+
+        assertNotNull(response);
+        assertEquals(1, response.totalElements());
+        assertEquals("Contributor Resource 1", response.content().get(0).title());
+    }
+
+    @Test
+    void getResourcesByContributor_customSorting() {
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(resourceRepository.findByUploadedById(eq(1L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        assertDoesNotThrow(() -> resourceService.getResourcesByContributor(1L, 0, 10, "oldest"));
+        assertDoesNotThrow(() -> resourceService.getResourcesByContributor(1L, 0, 10, "title_asc"));
+        assertDoesNotThrow(() -> resourceService.getResourcesByContributor(1L, 0, 10, "title_desc"));
+    }
+
+    @Test
+    void getResourcesByContributor_invalidSort_throwsBadRequest() {
+        when(userRepository.existsById(1L)).thenReturn(true);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
+                resourceService.getResourcesByContributor(1L, 0, 10, "malicious_column"));
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        assertTrue(ex.getReason().contains("Invalid sort option"));
+    }
+
+    @Test
+    void getResourcesByContributor_contributorNotFound_throws404() {
+        when(userRepository.existsById(999L)).thenReturn(false);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
+                resourceService.getResourcesByContributor(999L, 0, 10, "newest"));
+
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+        assertEquals("Contributor not found with id: 999", ex.getReason());
+    }
+
+    @Test
+    void getResourcesByContributor_invalidPageNegative_throwsBadRequest() {
+        when(userRepository.existsById(1L)).thenReturn(true);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
+                resourceService.getResourcesByContributor(1L, -1, 10, "newest"));
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        assertEquals("Page index must not be less than zero", ex.getReason());
+    }
+
+    @Test
+    void getResourcesByContributor_invalidPageSizeZero_throwsBadRequest() {
+        when(userRepository.existsById(1L)).thenReturn(true);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
+                resourceService.getResourcesByContributor(1L, 0, 0, "newest"));
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        assertEquals("Page size must be between 1 and 50", ex.getReason());
+    }
+
+    @Test
+    void getResourcesByContributor_invalidPageSizeOver50_throwsBadRequest() {
+        when(userRepository.existsById(1L)).thenReturn(true);
+
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
+                resourceService.getResourcesByContributor(1L, 0, 51, "newest"));
+
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        assertEquals("Page size must be between 1 and 50", ex.getReason());
+    }
+
+    @Test
+    void getResourcesByContributor_emptyResources_returnsEmptyPageResponse() {
+        when(userRepository.existsById(1L)).thenReturn(true);
+        when(resourceRepository.findByUploadedById(eq(1L), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        PageResponse<ResourceResponse> response =
+                resourceService.getResourcesByContributor(1L, 0, 10, "newest");
+
+        assertNotNull(response);
+        assertEquals(0, response.totalElements());
+        assertTrue(response.empty());
+        assertTrue(response.content().isEmpty());
     }
 }
 

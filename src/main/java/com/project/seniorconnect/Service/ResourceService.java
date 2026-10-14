@@ -160,6 +160,37 @@ public class ResourceService {
         return getResources(category, search, 0, 50, "newest").content();
     }
 
+    @Transactional(readOnly = true)
+    public PageResponse<ResourceResponse> getResourcesByContributor(
+            Long userId,
+            int page,
+            int size,
+            String sortOption) {
+
+        if (!userRepository.existsById(userId)) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Contributor not found with id: " + userId);
+        }
+
+        if (page < 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Page index must not be less than zero");
+        }
+
+        if (size < 1 || size > 50) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Page size must be between 1 and 50");
+        }
+
+        Sort sort = resolveSort(sortOption);
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        Page<Resource> resourcePage = resourceRepository.findByUploadedById(userId, pageable);
+        return PageResponse.from(resourcePage.map(this::toResponse));
+    }
 
     private Sort resolveSort(String sortOption) {
         if (sortOption == null || sortOption.isBlank() || "newest".equalsIgnoreCase(sortOption.trim())) {
