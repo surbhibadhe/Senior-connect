@@ -7,31 +7,22 @@ import com.project.seniorconnect.Service.ResourceService;
 
 import jakarta.validation.Valid;
 
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.List;
 
-import org.springframework.http.MediaType;
-import org.springframework.web.multipart.MultipartFile;
-
-import org.springframework.core.io.UrlResource;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
-import java.io.IOException;
-
-import com.project.seniorconnect.DTO.ResourceCreateRequest;
-import com.project.seniorconnect.DTO.ResourceResponse;
-import jakarta.validation.Valid;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestBody;
-    
 @RestController
 @RequestMapping("/api/resources")
 public class ResourceController {
@@ -42,8 +33,7 @@ public class ResourceController {
         this.resourceService = resourceService;
     }
 
-    // Get all resources or filter by category
-
+    // Get all resources or filter by category / search
     @GetMapping
     public List<ResourceResponse> getResources(
             @RequestParam(required = false) ResourceCategory category,
@@ -52,26 +42,30 @@ public class ResourceController {
         return resourceService.getResources(category, search);
     }
 
-
     // Get a single resource by ID
     @GetMapping("/{id}")
     public ResourceResponse getResourceById(@PathVariable Long id) {
         return resourceService.getResourceById(id);
     }
 
-    // Create a resource (SENIOR or ADMIN only)
+    // Create a text or link resource
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     public ResourceResponse createResource(
             @Valid @RequestBody ResourceCreateRequest request,
             @AuthenticationPrincipal OidcUser googleUser) {
 
+        if (googleUser == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "User is not authenticated");
+        }
+
         return resourceService.createResource(
                 request,
                 googleUser.getSubject()
         );
     }
-
 
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
@@ -82,6 +76,12 @@ public class ResourceController {
             @RequestParam("file") MultipartFile file,
             @AuthenticationPrincipal OidcUser googleUser) {
 
+        if (googleUser == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "User is not authenticated");
+        }
+
         return resourceService.uploadResource(
                 title,
                 description,
@@ -91,10 +91,16 @@ public class ResourceController {
         );
     }
 
-
     @GetMapping("/{id}/download")
     public ResponseEntity<org.springframework.core.io.Resource> downloadResource(
-            @PathVariable Long id) throws IOException {
+            @PathVariable Long id,
+            @AuthenticationPrincipal OidcUser googleUser) throws IOException {
+
+        if (googleUser == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "User is not authenticated");
+        }
 
         com.project.seniorconnect.Entity.Resource resource =
                 resourceService.getResourceEntityForDownload(id);
@@ -109,17 +115,23 @@ public class ResourceController {
             default -> "application/octet-stream";
         };
 
-        String filename = resource.getOriginalFileName() == null
-                ? "download"
-                : resource.getOriginalFileName().replace("\"", "");
+        String rawFilename = resource.getOriginalFileName();
+        String safeFilename;
+        if (rawFilename == null || rawFilename.isBlank()) {
+            safeFilename = "download";
+        } else {
+            safeFilename = Paths.get(rawFilename).getFileName().toString();
+        }
+
+        ContentDisposition contentDisposition = ContentDisposition.attachment()
+                .filename(safeFilename, StandardCharsets.UTF_8)
+                .build();
 
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(contentType))
-                .header(HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"" + filename + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition.toString())
                 .body(file);
     }
-
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
@@ -127,10 +139,14 @@ public class ResourceController {
             @PathVariable Long id,
             @AuthenticationPrincipal OidcUser googleUser) {
 
+        if (googleUser == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "User is not authenticated");
+        }
+
         resourceService.deleteResource(id, googleUser.getSubject());
     }
-
-
 
     @PutMapping("/{id}")
     public ResourceResponse updateResource(
@@ -138,11 +154,13 @@ public class ResourceController {
             @Valid @RequestBody ResourceCreateRequest request,
             @AuthenticationPrincipal OidcUser googleUser) {
 
+        if (googleUser == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "User is not authenticated");
+        }
+
         return resourceService.updateResource(
                 id, request, googleUser.getSubject());
     }
-
-
-
-
 }

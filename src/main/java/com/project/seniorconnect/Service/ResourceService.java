@@ -65,13 +65,6 @@ public class ResourceService {
                         HttpStatus.NOT_FOUND,
                         "User profile not found"));
 
-        if (user.getRole() != Role.SENIOR
-                && user.getRole() != Role.ADMIN) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "Only seniors and admins can create resources");
-        }
-
         ResourceType type = request.type();
 
         if (type == ResourceType.TEXT) {
@@ -92,13 +85,13 @@ public class ResourceService {
 
         Resource resource = new Resource();
         resource.setTitle(request.title().trim());
-        resource.setDescription(request.description());
+        resource.setDescription(request.description() != null ? request.description().trim() : null);
         resource.setCategory(request.category());
         resource.setType(type);
         resource.setTextContent(
                 type == ResourceType.TEXT ? request.textContent() : null);
         resource.setResourceUrl(
-                type == ResourceType.TEXT ? null : request.resourceUrl());
+                type == ResourceType.TEXT ? null : request.resourceUrl().trim());
         resource.setUploadedBy(user);
 
         Resource savedResource = resourceRepository.save(resource);
@@ -162,15 +155,16 @@ public class ResourceService {
                     "No uploaded file exists for this resource");
         }
 
+        String safeStoredFileName = Paths.get(resource.getStoredFileName()).getFileName().toString();
         Path uploadPath = Paths.get(uploadDir)
                 .toAbsolutePath()
                 .normalize();
 
         Path filePath = uploadPath
-                .resolve(resource.getStoredFileName())
+                .resolve(safeStoredFileName)
                 .normalize();
 
-        if (!filePath.startsWith(uploadPath)) {
+        if (!filePath.startsWith(uploadPath) || filePath.equals(uploadPath)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Invalid file path");
@@ -249,11 +243,28 @@ public class ResourceService {
                         HttpStatus.NOT_FOUND,
                         "User profile not found"));
 
-        if (user.getRole() != Role.SENIOR
-                && user.getRole() != Role.ADMIN) {
+        if (title == null || title.isBlank()) {
             throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "Only seniors and admins can upload resources");
+                    HttpStatus.BAD_REQUEST,
+                    "Title is required");
+        }
+
+        if (title.trim().length() > 200) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Title must not exceed 200 characters");
+        }
+
+        if (description != null && description.length() > 2000) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Description must not exceed 2000 characters");
+        }
+
+        if (category == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Category is required");
         }
 
         if (file == null || file.isEmpty()) {
@@ -276,22 +287,39 @@ public class ResourceService {
                     "Invalid filename");
         }
 
-        String extension = originalName.substring(
-                        originalName.lastIndexOf('.') + 1)
-                .toLowerCase(Locale.ROOT);
+        String cleanOriginalName = Paths.get(originalName).getFileName().toString().trim();
+        if (cleanOriginalName.isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Invalid filename");
+        }
 
-        ResourceType type;
+        int dotIndex = cleanOriginalName.lastIndexOf('.');
+        if (dotIndex <= 0 || dotIndex == cleanOriginalName.length() - 1) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "File must have a valid extension");
+        }
 
-        switch (extension) {
-            case "pdf" -> type = ResourceType.PDF;
-            case "doc" -> type = ResourceType.DOC;
-            case "docx" -> type = ResourceType.DOCX;
+        String extension = cleanOriginalName.substring(dotIndex + 1).toLowerCase(Locale.ROOT);
+
+        ResourceType type = switch (extension) {
+            case "pdf" -> ResourceType.PDF;
+            case "doc" -> ResourceType.DOC;
+            case "docx" -> ResourceType.DOCX;
             default -> throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Only PDF, DOC, and DOCX files are allowed");
-        }
+        };
 
-        String contentType = file.getContentType();
+        String rawContentType = file.getContentType();
+        String contentType = rawContentType;
+        if (contentType != null) {
+            int semicolon = contentType.indexOf(';');
+            if (semicolon != -1) {
+                contentType = contentType.substring(0, semicolon).trim();
+            }
+        }
 
         boolean validContentType = switch (type) {
             case PDF -> "application/pdf".equalsIgnoreCase(contentType);
@@ -311,7 +339,7 @@ public class ResourceService {
         Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
         Path destination = uploadPath.resolve(storedName).normalize();
 
-        if (!destination.startsWith(uploadPath)) {
+        if (!destination.startsWith(uploadPath) || destination.equals(uploadPath)) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
                     "Invalid upload path");
@@ -319,7 +347,7 @@ public class ResourceService {
 
         try {
             Files.createDirectories(uploadPath);
-            Files.copy(file.getInputStream(), destination);
+            Files.copy(file.getInputStream(), destination, StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException exception) {
             throw new ResponseStatusException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
@@ -328,15 +356,15 @@ public class ResourceService {
 
         Resource resource = new Resource();
         resource.setTitle(title.trim());
-        resource.setDescription(description);
+        resource.setDescription(description != null ? description.trim() : null);
         resource.setCategory(category);
         resource.setType(type);
-        resource.setOriginalFileName(originalName);
+        resource.setOriginalFileName(cleanOriginalName);
         resource.setStoredFileName(storedName);
         resource.setUploadedBy(user);
 
         try {
-            Resource saved = resourceRepository.save(resource);
+            Resource saved = resourceRepository.saveAndFlush(resource);
             return toResponse(saved);
         } catch (RuntimeException exception) {
             try {
@@ -365,30 +393,33 @@ public class ResourceService {
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "User profile not found"));
 
-        if (user.getRole() != Role.SENIOR
-                && user.getRole() != Role.ADMIN) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "Only seniors and admins can delete resources");
-        }
-
         Resource resource = resourceRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Resource not found"));
 
-        if (resource.getStoredFileName() != null
-                && !resource.getStoredFileName().isBlank()) {
-            Path filePath = Paths.get(uploadDir)
-                    .toAbsolutePath()
-                    .normalize()
-                    .resolve(resource.getStoredFileName())
-                    .normalize();
+        if (user.getRole() != Role.ADMIN
+                && !resource.getUploadedBy().getId().equals(user.getId())) {
+            throw new ResponseStatusException(
+                    HttpStatus.FORBIDDEN,
+                    "You can delete only resources you uploaded");
+        }
 
+        String storedFileName = resource.getStoredFileName();
+
+        resourceRepository.delete(resource);
+        resourceRepository.flush();
+
+        if (storedFileName != null && !storedFileName.isBlank()) {
+            String safeFileName = Paths.get(storedFileName).getFileName().toString();
             Path uploadPath = Paths.get(uploadDir)
                     .toAbsolutePath()
                     .normalize();
 
-            if (!filePath.startsWith(uploadPath)) {
+            Path filePath = uploadPath
+                    .resolve(safeFileName)
+                    .normalize();
+
+            if (!filePath.startsWith(uploadPath) || filePath.equals(uploadPath)) {
                 throw new ResponseStatusException(
                         HttpStatus.BAD_REQUEST, "Invalid file path");
             }
@@ -401,8 +432,6 @@ public class ResourceService {
                         "Could not delete uploaded file");
             }
         }
-
-        resourceRepository.delete(resource);
     }
 
 
@@ -414,20 +443,13 @@ public class ResourceService {
 
         User user = userRepository.findByGoogleId(googleId)
                 .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "User not found"));
-
-        if (user.getRole() != Role.SENIOR
-                && user.getRole() != Role.ADMIN) {
-            throw new ResponseStatusException(
-                    HttpStatus.FORBIDDEN,
-                    "Only seniors and admins can update resources");
-        }
+                        HttpStatus.NOT_FOUND, "User profile not found"));
 
         Resource resource = resourceRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Resource not found"));
 
-        // Seniors can update only their own resources.
+        // Students can update only their own resources. Admins can update any resource.
         if (user.getRole() != Role.ADMIN
                 && !resource.getUploadedBy().getId().equals(user.getId())) {
             throw new ResponseStatusException(
@@ -444,17 +466,24 @@ public class ResourceService {
                     "Use the upload endpoint to add a file");
         }
 
-        resource.setTitle(request.title());
-        resource.setDescription(request.description());
+        if (request.type() == ResourceType.TEXT) {
+            if (request.textContent() == null || request.textContent().isBlank()) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Text content is required for TEXT resources");
+            }
+        } else if (request.type() == ResourceType.GOOGLE_DRIVE_LINK
+                || request.type() == ResourceType.EXTERNAL_LINK) {
+            validateUrl(request.resourceUrl());
+        }
+
+        resource.setTitle(request.title().trim());
+        resource.setDescription(request.description() != null ? request.description().trim() : null);
         resource.setCategory(request.category());
         resource.setType(request.type());
-        resource.setTextContent(request.textContent());
-        resource.setResourceUrl(request.resourceUrl());
+        resource.setTextContent(request.type() == ResourceType.TEXT ? request.textContent() : null);
+        resource.setResourceUrl(request.type() == ResourceType.TEXT ? null : request.resourceUrl().trim());
 
         return toResponse(resourceRepository.save(resource));
     }
-
-
-
-
 }
