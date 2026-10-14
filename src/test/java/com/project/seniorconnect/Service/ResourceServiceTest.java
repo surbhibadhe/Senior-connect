@@ -550,7 +550,7 @@ class ResourceServiceTest {
         assertEquals(12, response.totalElements());
         assertEquals(3, response.totalPages());
         assertFalse(response.first());
-        assertFalse(response.last());
+        assertTrue(response.last());
 
         Pageable captured = pageableCaptor.getValue();
         assertEquals(2, captured.getPageNumber());
