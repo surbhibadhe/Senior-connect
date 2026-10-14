@@ -1,13 +1,20 @@
 package com.project.seniorconnect.Controller;
 
+import com.project.seniorconnect.DTO.BookmarkStatusResponse;
+import com.project.seniorconnect.DTO.HelpfulStatusResponse;
 import com.project.seniorconnect.DTO.PageResponse;
 import com.project.seniorconnect.DTO.ResourceCreateRequest;
+import com.project.seniorconnect.DTO.ResourceReportRequest;
+import com.project.seniorconnect.DTO.ResourceReportResponse;
 import com.project.seniorconnect.DTO.ResourceResponse;
 import com.project.seniorconnect.Entity.ResourceCategory;
+import com.project.seniorconnect.Service.EngagementService;
+import com.project.seniorconnect.Service.ModerationService;
 import com.project.seniorconnect.Service.ResourceService;
 
 import jakarta.validation.Valid;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -29,9 +36,21 @@ import java.util.List;
 public class ResourceController {
 
     private final ResourceService resourceService;
+    private final EngagementService engagementService;
+    private final ModerationService moderationService;
 
     public ResourceController(ResourceService resourceService) {
+        this(resourceService, null, null);
+    }
+
+    @Autowired
+    public ResourceController(
+            ResourceService resourceService,
+            @Autowired(required = false) EngagementService engagementService,
+            @Autowired(required = false) ModerationService moderationService) {
         this.resourceService = resourceService;
+        this.engagementService = engagementService;
+        this.moderationService = moderationService;
     }
 
     // Get all resources with pagination, search, category filtering, and sorting
@@ -166,5 +185,112 @@ public class ResourceController {
 
         return resourceService.updateResource(
                 id, request, googleUser.getSubject());
+    }
+
+    // Bookmark a resource
+    @PostMapping("/{id}/bookmark")
+    public BookmarkStatusResponse bookmarkResource(
+            @PathVariable Long id,
+            @AuthenticationPrincipal OidcUser googleUser) {
+
+        if (googleUser == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "User is not authenticated");
+        }
+
+        return engagementService.bookmarkResource(id, googleUser.getSubject());
+    }
+
+    // Remove a bookmark
+    @DeleteMapping("/{id}/bookmark")
+    public BookmarkStatusResponse removeBookmark(
+            @PathVariable Long id,
+            @AuthenticationPrincipal OidcUser googleUser) {
+
+        if (googleUser == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "User is not authenticated");
+        }
+
+        return engagementService.removeBookmark(id, googleUser.getSubject());
+    }
+
+    // Check whether resource is bookmarked by current user
+    @GetMapping("/{id}/bookmark")
+    public BookmarkStatusResponse getBookmarkStatus(
+            @PathVariable Long id,
+            @AuthenticationPrincipal OidcUser googleUser) {
+
+        if (googleUser == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "User is not authenticated");
+        }
+
+        return engagementService.getBookmarkStatus(id, googleUser.getSubject());
+    }
+
+    // Mark resource as helpful
+    @PostMapping("/{id}/helpful")
+    public HelpfulStatusResponse markHelpful(
+            @PathVariable Long id,
+            @AuthenticationPrincipal OidcUser googleUser) {
+
+        if (googleUser == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "User is not authenticated");
+        }
+
+        return engagementService.markHelpful(id, googleUser.getSubject());
+    }
+
+    // Remove helpful mark
+    @DeleteMapping("/{id}/helpful")
+    public HelpfulStatusResponse removeHelpful(
+            @PathVariable Long id,
+            @AuthenticationPrincipal OidcUser googleUser) {
+
+        if (googleUser == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "User is not authenticated");
+        }
+
+        return engagementService.removeHelpful(id, googleUser.getSubject());
+    }
+
+    // Retrieve helpfulness count and user's helpful status
+    @GetMapping("/{id}/helpful")
+    public HelpfulStatusResponse getHelpfulStatus(
+            @PathVariable Long id,
+            @AuthenticationPrincipal OidcUser googleUser) {
+
+        if (googleUser == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "User is not authenticated");
+        }
+
+        return engagementService.getHelpfulStatus(id, googleUser.getSubject());
+    }
+
+    // Report a resource
+    @PostMapping("/{id}/report")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResourceReportResponse reportResource(
+            @PathVariable Long id,
+            @Valid @RequestBody ResourceReportRequest request,
+            @AuthenticationPrincipal OidcUser googleUser) {
+
+        if (googleUser == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.UNAUTHORIZED,
+                    "User is not authenticated");
+        }
+
+        return moderationService.reportResource(id, request, googleUser.getSubject());
     }
 }

@@ -9,8 +9,12 @@ import com.project.seniorconnect.Entity.ResourceCategory;
 import com.project.seniorconnect.Entity.ResourceType;
 import com.project.seniorconnect.Entity.Role;
 import com.project.seniorconnect.Entity.User;
+import com.project.seniorconnect.Repository.BookmarkRepository;
+import com.project.seniorconnect.Repository.ResourceHelpfulRepository;
+import com.project.seniorconnect.Repository.ResourceReportRepository;
 import com.project.seniorconnect.Repository.ResourceRepository;
 import com.project.seniorconnect.Repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -45,12 +49,28 @@ public class ResourceService {
 
     private final ResourceRepository resourceRepository;
     private final UserRepository userRepository;
+    private final ResourceHelpfulRepository resourceHelpfulRepository;
+    private final BookmarkRepository bookmarkRepository;
+    private final ResourceReportRepository resourceReportRepository;
 
     public ResourceService(
             ResourceRepository resourceRepository,
             UserRepository userRepository) {
+        this(resourceRepository, userRepository, null, null, null);
+    }
+
+    @Autowired
+    public ResourceService(
+            ResourceRepository resourceRepository,
+            UserRepository userRepository,
+            @Autowired(required = false) ResourceHelpfulRepository resourceHelpfulRepository,
+            @Autowired(required = false) BookmarkRepository bookmarkRepository,
+            @Autowired(required = false) ResourceReportRepository resourceReportRepository) {
         this.resourceRepository = resourceRepository;
         this.userRepository = userRepository;
+        this.resourceHelpfulRepository = resourceHelpfulRepository;
+        this.bookmarkRepository = bookmarkRepository;
+        this.resourceReportRepository = resourceReportRepository;
     }
 
 
@@ -192,7 +212,7 @@ public class ResourceService {
         return PageResponse.from(resourcePage.map(this::toResponse));
     }
 
-    private Sort resolveSort(String sortOption) {
+    public Sort resolveSort(String sortOption) {
         if (sortOption == null || sortOption.isBlank() || "newest".equalsIgnoreCase(sortOption.trim())) {
             return Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
         }
@@ -292,7 +312,11 @@ public class ResourceService {
         }
     }
 
-    private ResourceResponse toResponse(Resource resource) {
+    public ResourceResponse toResponse(Resource resource) {
+        long helpfulCount = (resourceHelpfulRepository != null && resource.getId() != null)
+                ? resourceHelpfulRepository.countByResourceId(resource.getId())
+                : 0L;
+
         return new ResourceResponse(
                 resource.getId(),
                 resource.getTitle(),
@@ -304,7 +328,8 @@ public class ResourceService {
                 resource.getOriginalFileName(),
                 resource.getUploadedBy().getName(),
                 resource.getCreatedAt(),
-                resource.getUpdatedAt()
+                resource.getUpdatedAt(),
+                helpfulCount
         );
     }
 
@@ -484,6 +509,16 @@ public class ResourceService {
         }
 
         String storedFileName = resource.getStoredFileName();
+
+        if (bookmarkRepository != null) {
+            bookmarkRepository.deleteByResourceId(id);
+        }
+        if (resourceHelpfulRepository != null) {
+            resourceHelpfulRepository.deleteByResourceId(id);
+        }
+        if (resourceReportRepository != null) {
+            resourceReportRepository.disassociateResource(id);
+        }
 
         resourceRepository.delete(resource);
         resourceRepository.flush();
