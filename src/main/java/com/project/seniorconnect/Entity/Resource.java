@@ -35,6 +35,9 @@ public class Resource {
     @Column(length = 500)
     private String originalFileName;
 
+    @Column(length = 1000)
+    private String storedFileName;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "uploaded_by", nullable = false)
     private User uploadedBy;
@@ -112,6 +115,14 @@ public class Resource {
         this.originalFileName = originalFileName;
     }
 
+    public String getStoredFileName() {
+        return storedFileName;
+    }
+
+    public void setStoredFileName(String storedFileName) {
+        this.storedFileName = storedFileName;
+    }
+
     public User getUploadedBy() {
         return uploadedBy;
     }
@@ -127,4 +138,8 @@ public class Resource {
     public LocalDateTime getUpdatedAt() {
         return updatedAt;
     }
+
+
+
+
 }
