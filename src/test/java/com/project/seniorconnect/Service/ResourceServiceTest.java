@@ -1,5 +1,6 @@
 package com.project.seniorconnect.Service;
 
+import com.project.seniorconnect.DTO.PageResponse;
 import com.project.seniorconnect.DTO.ResourceCreateRequest;
 import com.project.seniorconnect.DTO.ResourceResponse;
 import com.project.seniorconnect.Entity.Resource;
@@ -13,8 +14,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -495,38 +501,218 @@ class ResourceServiceTest {
         assertEquals("Resource not found", ex.getReason());
     }
 
-    // --- 5. Retrieval, Search, and Download Behavior ---
+    // --- 5. Retrieval, Pagination, Search, Filtering, and Sorting ---
 
     @Test
-    void getResources_filterByCategory() {
+    void getResources_defaultPaginationAndSort_newestFirst() {
         Resource r1 = new Resource();
-        r1.setTitle("Notes 1");
-        r1.setCategory(ResourceCategory.NOTES);
+        ReflectionTestUtils.setField(r1, "id", 1L);
+        r1.setTitle("Resource 1");
         r1.setUploadedBy(juniorUser);
+        r1.setCategory(ResourceCategory.NOTES);
 
-        when(resourceRepository.findByCategoryOrderByCreatedAtDesc(ResourceCategory.NOTES))
-                .thenReturn(List.of(r1));
+        Page<Resource> pageMock = new PageImpl<>(List.of(r1), org.springframework.data.domain.PageRequest.of(0, 10), 1);
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
 
-        List<ResourceResponse> results = resourceService.getResources(ResourceCategory.NOTES, null);
+        when(resourceRepository.findAll(pageableCaptor.capture())).thenReturn(pageMock);
 
-        assertEquals(1, results.size());
-        assertEquals("Notes 1", results.get(0).title());
+        PageResponse<ResourceResponse> response = resourceService.getResources(null, null, 0, 10, "newest");
+
+        assertNotNull(response);
+        assertEquals(0, response.page());
+        assertEquals(10, response.size());
+        assertEquals(1, response.totalElements());
+        assertEquals(1, response.totalPages());
+        assertTrue(response.first());
+        assertTrue(response.last());
+        assertFalse(response.empty());
+        assertEquals(1, response.content().size());
+
+        Pageable captured = pageableCaptor.getValue();
+        assertEquals(0, captured.getPageNumber());
+        assertEquals(10, captured.getPageSize());
+        Sort.Order order = captured.getSort().getOrderFor("createdAt");
+        assertNotNull(order);
+        assertTrue(order.isDescending());
     }
 
     @Test
-    void getResources_searchByTitle() {
+    void getResources_customPageAndSize() {
+        Page<Resource> emptyPage = new PageImpl<>(List.of(), org.springframework.data.domain.PageRequest.of(2, 5), 12);
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+
+        when(resourceRepository.findAll(pageableCaptor.capture())).thenReturn(emptyPage);
+
+        PageResponse<ResourceResponse> response = resourceService.getResources(null, null, 2, 5, "newest");
+
+        assertEquals(2, response.page());
+        assertEquals(5, response.size());
+        assertEquals(12, response.totalElements());
+        assertEquals(3, response.totalPages());
+        assertFalse(response.first());
+        assertFalse(response.last());
+
+        Pageable captured = pageableCaptor.getValue();
+        assertEquals(2, captured.getPageNumber());
+        assertEquals(5, captured.getPageSize());
+    }
+
+    @Test
+    void getResources_negativePage_throwsBadRequest() {
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
+                resourceService.getResources(null, null, -1, 10, "newest"));
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        assertEquals("Page index must not be less than zero", ex.getReason());
+    }
+
+    @Test
+    void getResources_zeroOrNegativeSize_throwsBadRequest() {
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
+                resourceService.getResources(null, null, 0, 0, "newest"));
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        assertEquals("Page size must be greater than zero", ex.getReason());
+
+        ResponseStatusException ex2 = assertThrows(ResponseStatusException.class, () ->
+                resourceService.getResources(null, null, 0, -5, "newest"));
+        assertEquals(HttpStatus.BAD_REQUEST, ex2.getStatusCode());
+    }
+
+    @Test
+    void getResources_excessiveSize_throwsBadRequest() {
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
+                resourceService.getResources(null, null, 0, 51, "newest"));
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        assertEquals("Page size must not exceed 50", ex.getReason());
+    }
+
+    @Test
+    void getResources_invalidSortOption_throwsBadRequest() {
+        ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
+                resourceService.getResources(null, null, 0, 10, "malicious_col"));
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getStatusCode());
+        assertTrue(ex.getReason().contains("Invalid sort option"));
+    }
+
+    @Test
+    void getResources_sortingOptions_allSupportedModes() {
+        Page<Resource> emptyPage = new PageImpl<>(List.of());
+        ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+
+        // oldest
+        when(resourceRepository.findAll(captor.capture())).thenReturn(emptyPage);
+        resourceService.getResources(null, null, 0, 10, "oldest");
+        assertTrue(captor.getValue().getSort().getOrderFor("createdAt").isAscending());
+
+        // title_asc
+        when(resourceRepository.findAll(captor.capture())).thenReturn(emptyPage);
+        resourceService.getResources(null, null, 0, 10, "title_asc");
+        assertTrue(captor.getValue().getSort().getOrderFor("title").isAscending());
+
+        // title_desc
+        when(resourceRepository.findAll(captor.capture())).thenReturn(emptyPage);
+        resourceService.getResources(null, null, 0, 10, "title_desc");
+        assertTrue(captor.getValue().getSort().getOrderFor("title").isDescending());
+    }
+
+    @Test
+    void getResources_searchMatchesTitleOrDescription_withoutCategory() {
         Resource r1 = new Resource();
-        r1.setTitle("Algorithms Guide");
-        r1.setCategory(ResourceCategory.NOTES);
+        ReflectionTestUtils.setField(r1, "id", 1L);
+        r1.setTitle("Spring Boot Guide");
+        r1.setDescription("Deep dive into Spring MVC");
         r1.setUploadedBy(seniorUser);
+        r1.setCategory(ResourceCategory.NOTES);
 
-        when(resourceRepository.findByTitleContainingIgnoreCaseOrderByCreatedAtDesc("Algorithms"))
-                .thenReturn(List.of(r1));
+        when(resourceRepository.findBySearch(eq("spring"), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(r1)));
 
-        List<ResourceResponse> results = resourceService.getResources(null, "Algorithms");
+        PageResponse<ResourceResponse> response = resourceService.getResources(null, "  spring  ", 0, 10, "newest");
 
-        assertEquals(1, results.size());
-        assertEquals("Algorithms Guide", results.get(0).title());
+        assertEquals(1, response.content().size());
+        assertEquals("Spring Boot Guide", response.content().get(0).title());
+        verify(resourceRepository).findBySearch(eq("spring"), any(Pageable.class));
+    }
+
+    @Test
+    void getResources_categoryFilterOnly() {
+        Resource r1 = new Resource();
+        ReflectionTestUtils.setField(r1, "id", 2L);
+        r1.setTitle("Lab Manual 1");
+        r1.setUploadedBy(juniorUser);
+        r1.setCategory(ResourceCategory.LAB_MANUALS);
+
+        when(resourceRepository.findByCategory(eq(ResourceCategory.LAB_MANUALS), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(r1)));
+
+        PageResponse<ResourceResponse> response = resourceService.getResources(ResourceCategory.LAB_MANUALS, null, 0, 10, "newest");
+
+        assertEquals(1, response.content().size());
+        assertEquals(ResourceCategory.LAB_MANUALS, response.content().get(0).category());
+        verify(resourceRepository).findByCategory(eq(ResourceCategory.LAB_MANUALS), any(Pageable.class));
+    }
+
+    @Test
+    void getResources_combinedCategoryAndSearch() {
+        Resource r1 = new Resource();
+        ReflectionTestUtils.setField(r1, "id", 3L);
+        r1.setTitle("Java Question Paper");
+        r1.setUploadedBy(juniorUser);
+        r1.setCategory(ResourceCategory.QUESTION_PAPERS);
+
+        when(resourceRepository.findByCategoryAndSearch(eq(ResourceCategory.QUESTION_PAPERS), eq("java"), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(r1)));
+
+        PageResponse<ResourceResponse> response = resourceService.getResources(ResourceCategory.QUESTION_PAPERS, "java", 0, 10, "newest");
+
+        assertEquals(1, response.content().size());
+        assertEquals("Java Question Paper", response.content().get(0).title());
+        verify(resourceRepository).findByCategoryAndSearch(eq(ResourceCategory.QUESTION_PAPERS), eq("java"), any(Pageable.class));
+    }
+
+    @Test
+    void getResources_blankSearchTreatedAsNoSearch() {
+        when(resourceRepository.findAll(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of()));
+
+        PageResponse<ResourceResponse> response = resourceService.getResources(null, "   ", 0, 10, "newest");
+
+        assertNotNull(response);
+        verify(resourceRepository).findAll(any(Pageable.class));
+        verify(resourceRepository, never()).findBySearch(any(), any());
+    }
+
+    @Test
+    void getResources_outOfRangePage_returnsEmptyContentWithMetadata() {
+        // total 5 elements, page 10 of size 10 has 0 items
+        Page<Resource> emptyPage = new PageImpl<>(List.of(), org.springframework.data.domain.PageRequest.of(10, 10), 5);
+        when(resourceRepository.findAll(any(Pageable.class))).thenReturn(emptyPage);
+
+        PageResponse<ResourceResponse> response = resourceService.getResources(null, null, 10, 10, "newest");
+
+        assertNotNull(response);
+        assertEquals(10, response.page());
+        assertEquals(10, response.size());
+        assertEquals(5, response.totalElements());
+        assertEquals(1, response.totalPages());
+        assertTrue(response.empty());
+        assertTrue(response.content().isEmpty());
+    }
+
+    @Test
+    void getResources_backwardCompatibleMethod() {
+        Resource r1 = new Resource();
+        ReflectionTestUtils.setField(r1, "id", 1L);
+        r1.setTitle("Backward Compatible");
+        r1.setUploadedBy(juniorUser);
+        r1.setCategory(ResourceCategory.NOTES);
+
+        when(resourceRepository.findAll(any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(r1)));
+
+        List<ResourceResponse> list = resourceService.getResources(null, null);
+
+        assertEquals(1, list.size());
+        assertEquals("Backward Compatible", list.get(0).title());
     }
 
     @Test
@@ -537,10 +723,9 @@ class ResourceServiceTest {
 
         when(resourceRepository.findById(50L)).thenReturn(Optional.of(resource));
 
-        // Attempting to resolve path outside uploadDir
         ResponseStatusException ex = assertThrows(ResponseStatusException.class, () ->
                 resourceService.getDownloadFile(50L));
-        // It must either throw BAD_REQUEST (Invalid file path) or NOT_FOUND (Uploaded file not found on server)
         assertTrue(ex.getStatusCode() == HttpStatus.BAD_REQUEST || ex.getStatusCode() == HttpStatus.NOT_FOUND);
     }
 }
+

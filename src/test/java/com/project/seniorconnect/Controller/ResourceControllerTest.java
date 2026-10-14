@@ -1,5 +1,6 @@
 package com.project.seniorconnect.Controller;
 
+import com.project.seniorconnect.DTO.PageResponse;
 import com.project.seniorconnect.DTO.ResourceCreateRequest;
 import com.project.seniorconnect.DTO.ResourceResponse;
 import com.project.seniorconnect.Entity.Resource;
@@ -347,4 +348,93 @@ class ResourceControllerTest {
                 .andExpect(header().exists("Content-Disposition"))
                 .andExpect(content().bytes("sample pdf stream".getBytes()));
     }
+
+    // --- 4. Pagination, Search, Filter, and Sort Endpoints ---
+
+    @Test
+    void getResources_defaultPagination_returnsOkWithPageMetadata() throws Exception {
+        ResourceResponse item = new ResourceResponse(
+                1L, "Data Structures", "Arrays", ResourceCategory.NOTES,
+                ResourceType.TEXT, "Content", null, null,
+                "Student", LocalDateTime.now(), LocalDateTime.now()
+        );
+        PageResponse<ResourceResponse> mockPage = new PageResponse<>(
+                List.of(item), 0, 10, 1, 1, true, true, false
+        );
+
+        when(resourceService.getResources(null, null, 0, 10, "newest"))
+                .thenReturn(mockPage);
+
+        mockMvc.perform(get("/api/resources"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page").value(0))
+                .andExpect(jsonPath("$.size").value(10))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.totalPages").value(1))
+                .andExpect(jsonPath("$.first").value(true))
+                .andExpect(jsonPath("$.last").value(true))
+                .andExpect(jsonPath("$.empty").value(false))
+                .andExpect(jsonPath("$.content[0].title").value("Data Structures"));
+    }
+
+    @Test
+    void getResources_invalidPage_returnsBadRequest() throws Exception {
+        when(resourceService.getResources(null, null, -1, 10, "newest"))
+                .thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Page index must not be less than zero"));
+
+        mockMvc.perform(get("/api/resources?page=-1"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Page index must not be less than zero"));
+    }
+
+    @Test
+    void getResources_invalidSize_returnsBadRequest() throws Exception {
+        when(resourceService.getResources(null, null, 0, 0, "newest"))
+                .thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Page size must be greater than zero"));
+
+        mockMvc.perform(get("/api/resources?size=0"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Page size must be greater than zero"));
+    }
+
+    @Test
+    void getResources_excessiveSize_returnsBadRequest() throws Exception {
+        when(resourceService.getResources(null, null, 0, 60, "newest"))
+                .thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Page size must not exceed 50"));
+
+        mockMvc.perform(get("/api/resources?size=60"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Page size must not exceed 50"));
+    }
+
+    @Test
+    void getResources_invalidSort_returnsBadRequest() throws Exception {
+        when(resourceService.getResources(null, null, 0, 10, "unknown_col"))
+                .thenThrow(new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid sort option: unknown_col. Supported options: newest, oldest, title_asc, title_desc"));
+
+        mockMvc.perform(get("/api/resources?sort=unknown_col"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.message").value("Invalid sort option: unknown_col. Supported options: newest, oldest, title_asc, title_desc"));
+    }
+
+    @Test
+    void getResources_withSearchAndCategoryAndPagination() throws Exception {
+        PageResponse<ResourceResponse> mockPage = new PageResponse<>(
+                List.of(), 1, 5, 0, 0, false, true, true
+        );
+
+        when(resourceService.getResources(eq(ResourceCategory.ASSIGNMENTS), eq("Algorithms"), eq(1), eq(5), eq("title_asc")))
+                .thenReturn(mockPage);
+
+        mockMvc.perform(get("/api/resources?category=ASSIGNMENTS&search=Algorithms&page=1&size=5&sort=title_asc"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page").value(1))
+                .andExpect(jsonPath("$.size").value(5))
+                .andExpect(jsonPath("$.empty").value(true));
+    }
 }
+

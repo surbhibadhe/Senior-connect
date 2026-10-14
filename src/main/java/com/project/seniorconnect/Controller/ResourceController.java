@@ -1,5 +1,6 @@
 package com.project.seniorconnect.Controller;
 
+import com.project.seniorconnect.DTO.PageResponse;
 import com.project.seniorconnect.DTO.ResourceCreateRequest;
 import com.project.seniorconnect.DTO.ResourceResponse;
 import com.project.seniorconnect.Entity.ResourceCategory;
@@ -33,13 +34,16 @@ public class ResourceController {
         this.resourceService = resourceService;
     }
 
-    // Get all resources or filter by category / search
+    // Get all resources with pagination, search, category filtering, and sorting
     @GetMapping
-    public List<ResourceResponse> getResources(
+    public PageResponse<ResourceResponse> getResources(
             @RequestParam(required = false) ResourceCategory category,
-            @RequestParam(required = false) String search) {
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "newest") String sort) {
 
-        return resourceService.getResources(category, search);
+        return resourceService.getResources(category, search, page, size, sort);
     }
 
     // Get a single resource by ID

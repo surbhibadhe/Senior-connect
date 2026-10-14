@@ -1,6 +1,7 @@
 
 package com.project.seniorconnect.Service;
 
+import com.project.seniorconnect.DTO.PageResponse;
 import com.project.seniorconnect.DTO.ResourceCreateRequest;
 import com.project.seniorconnect.DTO.ResourceResponse;
 import com.project.seniorconnect.Entity.Resource;
@@ -11,6 +12,10 @@ import com.project.seniorconnect.Entity.User;
 import com.project.seniorconnect.Repository.ResourceRepository;
 import com.project.seniorconnect.Repository.UserRepository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,8 +38,6 @@ import java.util.Locale;
 
 import org.springframework.core.io.UrlResource;
 import java.net.MalformedURLException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 
 @Service
@@ -101,32 +104,77 @@ public class ResourceService {
 
 
     @Transactional(readOnly = true)
+    public PageResponse<ResourceResponse> getResources(
+            ResourceCategory category,
+            String search,
+            int page,
+            int size,
+            String sortOption) {
+
+        if (page < 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Page index must not be less than zero");
+        }
+
+        if (size <= 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Page size must be greater than zero");
+        }
+
+        if (size > 50) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Page size must not exceed 50");
+        }
+
+        Sort sort = resolveSort(sortOption);
+        Pageable pageable = PageRequest.of(page, size, sort);
+
+        String cleanSearch = (search != null && !search.trim().isBlank())
+                ? search.trim()
+                : null;
+
+        Page<Resource> resourcePage;
+
+        if (cleanSearch != null && category != null) {
+            resourcePage = resourceRepository.findByCategoryAndSearch(category, cleanSearch, pageable);
+        } else if (cleanSearch != null) {
+            resourcePage = resourceRepository.findBySearch(cleanSearch, pageable);
+        } else if (category != null) {
+            resourcePage = resourceRepository.findByCategory(category, pageable);
+        } else {
+            resourcePage = resourceRepository.findAll(pageable);
+        }
+
+        Page<ResourceResponse> responsePage = resourcePage.map(this::toResponse);
+        return PageResponse.from(responsePage);
+    }
+
+
+    @Transactional(readOnly = true)
     public List<ResourceResponse> getResources(
             ResourceCategory category,
             String search) {
+        return getResources(category, search, 0, 50, "newest").content();
+    }
 
-        List<Resource> resources;
 
-        if (search != null && !search.isBlank()) {
-            resources =
-                    resourceRepository.findByTitleContainingIgnoreCaseOrderByCreatedAtDesc(
-                            search.trim());
-
-            if (category != null) {
-                resources = resources.stream()
-                        .filter(resource -> resource.getCategory() == category)
-                        .toList();
-            }
-        } else if (category != null) {
-            resources =
-                    resourceRepository.findByCategoryOrderByCreatedAtDesc(category);
-        } else {
-            resources = resourceRepository.findAllByOrderByCreatedAtDesc();
+    private Sort resolveSort(String sortOption) {
+        if (sortOption == null || sortOption.isBlank() || "newest".equalsIgnoreCase(sortOption.trim())) {
+            return Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
         }
 
-        return resources.stream()
-                .map(this::toResponse)
-                .toList();
+        String normalized = sortOption.trim().toLowerCase(Locale.ROOT);
+        return switch (normalized) {
+            case "oldest" -> Sort.by(Sort.Order.asc("createdAt"), Sort.Order.asc("id"));
+            case "title_asc", "title" -> Sort.by(Sort.Order.asc("title").ignoreCase(), Sort.Order.desc("id"));
+            case "title_desc" -> Sort.by(Sort.Order.desc("title").ignoreCase(), Sort.Order.desc("id"));
+            default -> throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Invalid sort option: " + sortOption + ". Supported options: newest, oldest, title_asc, title_desc");
+        };
     }
 
 
