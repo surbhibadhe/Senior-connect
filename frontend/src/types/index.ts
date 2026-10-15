@@ -51,6 +51,33 @@ export interface ResourceResponse {
   createdAt: string
   updatedAt: string | null
   helpfulCount: number
+  commentCount?: number
+}
+
+export interface CommentResponse {
+  id: number
+  resourceId: number
+  userId: number | null
+  userName: string
+  userEmail: string
+  userProfilePicture: string | null
+  userRole: string
+  userDepartment: string | null
+  content: string
+  parentCommentId: number | null
+  createdAt: string
+  updatedAt: string
+  upvotes: number
+  userUpvoted: boolean
+  canDelete: boolean
+  isAuthor: boolean
+  deleted: boolean
+  replies: CommentResponse[]
+}
+
+export interface CommentCreateRequest {
+  content: string
+  parentCommentId?: number
 }
 
 export interface UserProfileResponse {
@@ -142,4 +169,24 @@ export const REPORT_REASON_LABELS: Record<ReportReason, string> = {
   COPYRIGHT: 'Copyright violation',
   INAPPROPRIATE: 'Inappropriate or harmful content',
   OTHER: 'Other issue',
+}
+
+export interface ReviewResponse {
+  id: number
+  userId: number | null
+  authorName: string
+  authorPicture: string | null
+  authorSubtitle: string | null
+  perspectiveTag: string | null
+  content: string
+  rating: number
+  createdAt: string
+  canDelete: boolean
+}
+
+export interface ReviewCreateRequest {
+  content: string
+  rating?: number
+  perspectiveTag?: string
+  authorSubtitle?: string
 }

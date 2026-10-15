@@ -47,6 +47,7 @@ public class SecurityConfig {
                         )
                 )
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/reviews", "/api/csrf").permitAll()
                         .anyRequest().authenticated()
                 )
                 .exceptionHandling(exceptions -> exceptions

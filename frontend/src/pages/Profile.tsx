@@ -86,8 +86,8 @@ export default function Profile() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: '1.8rem',
-                fontFamily: 'var(--serif)',
-                fontWeight: 600,
+                fontFamily: 'var(--sans)',
+                fontWeight: 700,
                 color: 'var(--text-main)',
                 overflow: 'hidden',
                 border: '2px solid var(--border)',
@@ -108,9 +108,10 @@ export default function Profile() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.25rem' }}>
                 <h1
                   style={{
-                    fontFamily: 'var(--serif)',
+                    fontFamily: 'var(--sans)',
                     fontSize: '1.75rem',
-                    fontWeight: 400,
+                    fontWeight: 700,
+                    color: 'var(--text-main)',
                     margin: 0,
                   }}
                 >
@@ -192,9 +193,10 @@ export default function Profile() {
           <div>
             <h2
               style={{
-                fontFamily: 'var(--serif)',
+                fontFamily: 'var(--sans)',
                 fontSize: '1.45rem',
-                fontWeight: 400,
+                fontWeight: 700,
+                color: 'var(--text-main)',
                 margin: '0 0 0.2rem',
               }}
             >

@@ -1,41 +1,76 @@
 :root {
-  /* Warm Pale-Peach & Off-White Design Tokens */
-  --bg-main: #FCFAF8;
-  --bg-secondary: #F8F0EB;
+  /* ========================================================================
+     SENIORCONNECT ACADEMIC DESIGN TOKENS
+     DES Pune University Student Community & Resource Sharing Portal
+     ======================================================================== */
+
+  /* Surfaces & Backgrounds */
+  --bg-main: #FFFFFF;
+  --bg-secondary: #F3F6F3;
   --bg-card: #FFFFFF;
-  --accent-main: #E8C2B2;
-  --accent-soft: #F0DCD2;
-  --accent-terracotta: #B97F6B;
-  --accent-terracotta-hover: #A36A57;
-  --text-main: #332F2D;
-  --text-secondary: #827873;
-  --text-muted: #A39994;
-  --border: #EBE2DC;
-  --border-subtle: #F3ECE7;
+  --bg-subtle: #FAFBF9;
+  --bg-hover: #EEF3EF;
+
+  /* Primary Branding (Deep Forest Green) */
+  --primary-green: #00543F;
+  --deep-green: #004A36;
+  --forest-green-hover: #004230;
+  --forest-green-active: #003627;
+  --forest-green-light: #E6F0EC;
+
+  /* Typography Colors */
+  --text-main: #182720;
+  --text-secondary: #6D7971;
+  --text-muted: #8E9A92;
+  --text-inverse: #FFFFFF;
+
+  /* Understated Borders */
+  --border: #D8E0D9;
+  --border-subtle: #E8EFE9;
+  --border-focus: #00543F;
+
+  /* Selective Category & Document Pastel Accents */
+  --pastel-sage: #D8F1DF;
+  --pastel-sage-text: #0E4B28;
+  --pastel-peach: #FFE5D5;
+  --pastel-peach-text: #7A3512;
+  --pastel-blue: #DCEFF8;
+  --pastel-blue-text: #134B69;
+  --pastel-lavender: #EAE4F8;
+  --pastel-lavender-text: #452F77;
+  --pastel-yellow: #FFF0BD;
+  --pastel-yellow-text: #614C06;
 
   /* Status Colors */
-  --danger: #BA4E46;
-  --danger-soft: #FDF3F2;
-  --success: #4C7B65;
-  --success-soft: #F0F7F3;
-  --warning: #B37D28;
-  --warning-soft: #FDF8ED;
+  --danger: #B53A30;
+  --danger-soft: #FDEEEC;
+  --success: #00543F;
+  --success-soft: #D8F1DF;
+  --warning: #946200;
+  --warning-soft: #FFF4D6;
 
-  /* Typography */
-  --serif: 'DM Serif Display', Georgia, serif;
-  --sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Typography — Clean, normal, modern, highly legible font */
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --sans: var(--font-sans);
+  --serif: var(--font-sans);
 
-  /* Layout & Geometry */
-  --radius-sm: 6px;
-  --radius: 10px;
-  --radius-lg: 16px;
-  --max-width: 1080px;
-  --header-height: 68px;
+  /* Layout & Geometry (Restrained, Academic) */
+  --radius-xs: 3px;
+  --radius-sm: 5px;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --max-width: 1140px;
+  --header-height: 64px;
 
   /* Micro-Interactions */
   --ease: cubic-bezier(0.16, 1, 0.3, 1);
   --transition-fast: 150ms var(--ease);
   --transition-normal: 220ms var(--ease);
+
+  /* Subtle, Restrained Shadows */
+  --shadow-sm: 0 1px 3px rgba(24, 39, 32, 0.05);
+  --shadow-md: 0 4px 12px rgba(24, 39, 32, 0.06);
+  --shadow-lg: 0 8px 24px rgba(24, 39, 32, 0.08);
 }
 
 * {
@@ -45,6 +80,7 @@
 html {
   scroll-behavior: smooth;
   background-color: var(--bg-main);
+  color-scheme: light;
 }
 
 body {
@@ -52,7 +88,7 @@ body {
   background-color: var(--bg-main);
   color: var(--text-main);
   font-family: var(--sans);
-  font-size: 0.96rem;
+  font-size: 0.95rem;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -64,8 +100,8 @@ a {
 }
 
 :focus-visible {
-  outline: 2px solid var(--accent-terracotta);
-  outline-offset: 3px;
+  outline: 2px solid var(--primary-green);
+  outline-offset: 2px;
   border-radius: var(--radius-sm);
 }
 

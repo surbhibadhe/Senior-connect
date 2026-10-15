@@ -14,7 +14,9 @@ import {
   FileCode,
   Check,
   AlertCircle,
+  MessageSquare,
 } from 'lucide-react'
+import DiscussionSection from '../components/DiscussionSection'
 import {
   getResourceById,
   downloadResource,
@@ -45,6 +47,7 @@ export default function ResourceDetail() {
   const [isBookmarked, setIsBookmarked] = useState(false)
   const [isHelpful, setIsHelpful] = useState(false)
   const [helpfulCount, setHelpfulCount] = useState(0)
+  const [commentCount, setCommentCount] = useState(0)
   const [actionBusy, setActionBusy] = useState(false)
 
   // Modals
@@ -59,6 +62,7 @@ export default function ResourceDetail() {
       const res = await getResourceById(numericId)
       setResource(res)
       setHelpfulCount(res.helpfulCount || 0)
+      setCommentCount(res.commentCount || 0)
 
       // Fetch bookmark & helpful status in parallel
       try {
@@ -211,10 +215,11 @@ export default function ResourceDetail() {
 
           <h1
             style={{
-              fontFamily: 'var(--serif)',
-              fontSize: '2.2rem',
-              fontWeight: 400,
-              lineHeight: 1.2,
+              fontFamily: 'var(--sans)',
+              fontSize: '2.1rem',
+              fontWeight: 800,
+              lineHeight: 1.25,
+              letterSpacing: '-0.02em',
               margin: '0 0 1rem',
               color: 'var(--text-main)',
             }}
@@ -255,10 +260,11 @@ export default function ResourceDetail() {
           <div style={{ marginBottom: '2rem' }}>
             <h2
               style={{
-                fontFamily: 'var(--serif)',
+                fontFamily: 'var(--sans)',
                 fontSize: '1.2rem',
-                fontWeight: 400,
+                fontWeight: 700,
                 margin: '0 0 0.5rem',
+                color: 'var(--text-main)',
               }}
             >
               Overview
@@ -450,6 +456,17 @@ export default function ResourceDetail() {
               <Bookmark size={14} />
               <span>{isBookmarked ? 'Saved in Bookmarks' : 'Save for Later'}</span>
             </button>
+
+            {/* Jump to Reddit Discussion */}
+            <a
+              href="#discussion"
+              className="btn btn-sm btn-secondary"
+              title="Jump to discussion"
+            >
+              <MessageSquare size={14} />
+              <span>Discussion</span>
+              <span style={{ opacity: 0.85 }}>({commentCount})</span>
+            </a>
           </div>
 
           <div style={{ display: 'flex', gap: '0.65rem' }}>
@@ -498,6 +515,12 @@ export default function ResourceDetail() {
             )}
           </div>
         </div>
+
+        {/* Reddit-Style Discussion / Comments Thread */}
+        <DiscussionSection
+          resource={resource}
+          onCommentCountChange={(count) => setCommentCount(count)}
+        />
       </div>
 
       {/* Report Modal */}

@@ -131,8 +131,8 @@ export default function ContributorProfile() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: '1.6rem',
-                fontFamily: 'var(--serif)',
-                fontWeight: 600,
+                fontFamily: 'var(--sans)',
+                fontWeight: 700,
                 color: 'var(--text-main)',
                 overflow: 'hidden',
                 border: '2px solid var(--border)',
@@ -152,9 +152,10 @@ export default function ContributorProfile() {
             <div>
               <h1
                 style={{
-                  fontFamily: 'var(--serif)',
+                  fontFamily: 'var(--sans)',
                   fontSize: '1.75rem',
-                  fontWeight: 400,
+                  fontWeight: 700,
+                  color: 'var(--text-main)',
                   margin: '0 0 0.25rem',
                 }}
               >
@@ -213,9 +214,10 @@ export default function ContributorProfile() {
         <section>
           <h2
             style={{
-              fontFamily: 'var(--serif)',
+              fontFamily: 'var(--sans)',
               fontSize: '1.35rem',
-              fontWeight: 400,
+              fontWeight: 700,
+              color: 'var(--text-main)',
               margin: '0 0 1rem',
             }}
           >

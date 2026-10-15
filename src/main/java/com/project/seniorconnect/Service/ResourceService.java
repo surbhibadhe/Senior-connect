@@ -10,6 +10,8 @@ import com.project.seniorconnect.Entity.ResourceType;
 import com.project.seniorconnect.Entity.Role;
 import com.project.seniorconnect.Entity.User;
 import com.project.seniorconnect.Repository.BookmarkRepository;
+import com.project.seniorconnect.Repository.CommentRepository;
+import com.project.seniorconnect.Repository.CommentUpvoteRepository;
 import com.project.seniorconnect.Repository.ResourceHelpfulRepository;
 import com.project.seniorconnect.Repository.ResourceReportRepository;
 import com.project.seniorconnect.Repository.ResourceRepository;
@@ -52,11 +54,13 @@ public class ResourceService {
     private final ResourceHelpfulRepository resourceHelpfulRepository;
     private final BookmarkRepository bookmarkRepository;
     private final ResourceReportRepository resourceReportRepository;
+    private final CommentRepository commentRepository;
+    private final CommentUpvoteRepository commentUpvoteRepository;
 
     public ResourceService(
             ResourceRepository resourceRepository,
             UserRepository userRepository) {
-        this(resourceRepository, userRepository, null, null, null);
+        this(resourceRepository, userRepository, null, null, null, null, null);
     }
 
     @Autowired
@@ -65,12 +69,16 @@ public class ResourceService {
             UserRepository userRepository,
             @Autowired(required = false) ResourceHelpfulRepository resourceHelpfulRepository,
             @Autowired(required = false) BookmarkRepository bookmarkRepository,
-            @Autowired(required = false) ResourceReportRepository resourceReportRepository) {
+            @Autowired(required = false) ResourceReportRepository resourceReportRepository,
+            @Autowired(required = false) CommentRepository commentRepository,
+            @Autowired(required = false) CommentUpvoteRepository commentUpvoteRepository) {
         this.resourceRepository = resourceRepository;
         this.userRepository = userRepository;
         this.resourceHelpfulRepository = resourceHelpfulRepository;
         this.bookmarkRepository = bookmarkRepository;
         this.resourceReportRepository = resourceReportRepository;
+        this.commentRepository = commentRepository;
+        this.commentUpvoteRepository = commentUpvoteRepository;
     }
 
 
@@ -316,6 +324,9 @@ public class ResourceService {
         long helpfulCount = (resourceHelpfulRepository != null && resource.getId() != null)
                 ? resourceHelpfulRepository.countByResourceId(resource.getId())
                 : 0L;
+        long commentCount = (commentRepository != null && resource.getId() != null)
+                ? commentRepository.countByResourceIdAndDeletedFalse(resource.getId())
+                : 0L;
 
         return new ResourceResponse(
                 resource.getId(),
@@ -329,7 +340,8 @@ public class ResourceService {
                 resource.getUploadedBy().getName(),
                 resource.getCreatedAt(),
                 resource.getUpdatedAt(),
-                helpfulCount
+                helpfulCount,
+                commentCount
         );
     }
 
@@ -510,6 +522,12 @@ public class ResourceService {
 
         String storedFileName = resource.getStoredFileName();
 
+        if (commentUpvoteRepository != null) {
+            commentUpvoteRepository.deleteByResourceId(id);
+        }
+        if (commentRepository != null) {
+            commentRepository.deleteByResourceId(id);
+        }
         if (bookmarkRepository != null) {
             bookmarkRepository.deleteByResourceId(id);
         }

@@ -138,9 +138,10 @@ export default function Home() {
       <section style={{ marginBottom: '3rem' }}>
         <h2
           style={{
-            fontFamily: 'var(--serif)',
-            fontSize: '1.4rem',
-            fontWeight: 400,
+            fontFamily: 'var(--sans)',
+            fontSize: '1.35rem',
+            fontWeight: 700,
+            color: 'var(--text-main)',
             margin: '0 0 1.15rem',
           }}
         >
@@ -173,9 +174,10 @@ export default function Home() {
         >
           <h2
             style={{
-              fontFamily: 'var(--serif)',
-              fontSize: '1.4rem',
-              fontWeight: 400,
+              fontFamily: 'var(--sans)',
+              fontSize: '1.35rem',
+              fontWeight: 700,
+              color: 'var(--text-main)',
               margin: 0,
             }}
           >
