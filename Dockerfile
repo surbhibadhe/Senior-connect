@@ -1,17 +1,21 @@
 
-FROM maven:3.9-eclipse-temurin-17 AS build
+# Build the Spring Boot application with Java 25
+FROM maven:3.9-eclipse-temurin-25 AS build
+
 WORKDIR /app
 
 COPY pom.xml .
 COPY src ./src
 
-RUN mvn clean package -DskipTests
+RUN mvn -B clean package -DskipTests
 
-FROM eclipse-temurin:17-jre
+# Run the application with Java 25
+FROM eclipse-temurin:25-jre
+
 WORKDIR /app
 
 COPY --from=build /app/target/*.jar app.jar
 
 EXPOSE 8080
 
-ENTRYPOINT ["java", "-jar", "app.jar"]
+CMD ["sh", "-c", "java -Dserver.port=${PORT:-8080} -jar app.jar"]
