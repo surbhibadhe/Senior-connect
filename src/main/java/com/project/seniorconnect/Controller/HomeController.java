@@ -13,6 +13,6 @@ public class HomeController {
     @GetMapping("/")
     public void home(@AuthenticationPrincipal OidcUser user, HttpServletResponse response) throws IOException {
         // Smoothly redirect authenticated users into the React frontend
-        response.sendRedirect("http://localhost:5173/home");
+        response.sendRedirect("https://seniorconnect-edu.vercel.app/home");
     }
 }
