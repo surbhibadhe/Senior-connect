@@ -44,6 +44,7 @@ class OAuth2LoginSuccessHandlerTest {
 
     @BeforeEach
     void setUp() {
+        successHandler = new OAuth2LoginSuccessHandler(userRepository, "https://seniorconnect-edu.vercel.app");
         when(authentication.getPrincipal()).thenReturn(oidcUser);
         when(oidcUser.getSubject()).thenReturn("google-sub-999");
         when(oidcUser.getEmail()).thenReturn("sachin.badhe@despu.edu.in");
@@ -80,7 +81,7 @@ class OAuth2LoginSuccessHandlerTest {
         assertEquals(Role.SENIOR, saved.getRole());
         assertTrue(saved.isProfileComplete());
 
-        verify(response).sendRedirect("/");
+        verify(response).sendRedirect("https://seniorconnect-edu.vercel.app/home");
     }
 
     @Test
@@ -102,6 +103,7 @@ class OAuth2LoginSuccessHandlerTest {
         assertNull(saved.getDepartment());
         assertFalse(saved.isProfileComplete());
 
-        verify(response).sendRedirect("/");
+        verify(response).sendRedirect("https://seniorconnect-edu.vercel.app/home");
     }
 }
+

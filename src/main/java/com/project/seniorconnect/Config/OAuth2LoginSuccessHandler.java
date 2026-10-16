@@ -7,6 +7,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import jakarta.servlet.ServletException;
@@ -18,9 +19,14 @@ import java.io.IOException;
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
     private final UserRepository userRepository;
+    private final String frontendUrl;
 
-    public OAuth2LoginSuccessHandler(UserRepository userRepository) {
+    public OAuth2LoginSuccessHandler(
+            UserRepository userRepository,
+            @Value("${app.frontend.url:https://seniorconnect-edu.vercel.app}") String frontendUrl) {
         this.userRepository = userRepository;
+        String url = (frontendUrl != null && !frontendUrl.isBlank()) ? frontendUrl.trim() : "https://seniorconnect-edu.vercel.app";
+        this.frontendUrl = url.endsWith("/") ? url.substring(0, url.length() - 1) : url;
     }
 
     @Override
@@ -49,10 +55,6 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         userRepository.save(user);
 
-        response.sendRedirect("/");
-
-
-
-
+        response.sendRedirect(frontendUrl + "/home");
     }
 }
