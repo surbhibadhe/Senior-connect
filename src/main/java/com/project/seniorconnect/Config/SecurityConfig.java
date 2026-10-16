@@ -36,14 +36,13 @@ public class SecurityConfig {
 
         OidcUserService oidcUserService = new OidcUserService();
 
+        CookieCsrfTokenRepository csrfRepository = CookieCsrfTokenRepository.withHttpOnlyFalse();
+        csrfRepository.setCookieCustomizer(cookie -> cookie.sameSite("None").secure(true));
+
         http
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(csrf -> csrf
-                        .csrfTokenRepository(
-                                CookieCsrfTokenRepository.withHttpOnlyFalse((customizer) -> customizer
-                                        .sameSite("None")
-                                        .secure(true))
-                        )
+                        .csrfTokenRepository(csrfRepository)
                         .csrfTokenRequestHandler(
                                 new CsrfTokenRequestAttributeHandler()
                         )
