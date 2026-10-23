@@ -256,7 +256,7 @@ export default function UploadModal({
               </label>
               <input
                 id="res-file"
-                className="input-field"
+                className="file-input-field"
                 type="file"
                 accept=".pdf,.doc,.docx"
                 onChange={handleFileChange}

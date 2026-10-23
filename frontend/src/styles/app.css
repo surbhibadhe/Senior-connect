@@ -327,6 +327,29 @@
 /* ========================================================================
    4. FORM INPUTS & SEARCH
    ======================================================================== */
+.form-group {
+  margin-bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.form-label {
+  display: block;
+  font-family: var(--sans);
+  font-size: 0.86rem;
+  font-weight: 600;
+  color: var(--text-main);
+  letter-spacing: -0.01em;
+}
+
+.form-hint {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin: 0.35rem 0 0;
+  line-height: 1.45;
+}
+
 .search-input-wrapper {
   position: relative;
   flex: 1;
@@ -341,11 +364,15 @@
   pointer-events: none;
 }
 
+.search-input-wrapper .input-field {
+  padding-left: 2.6rem;
+}
+
 .input-field {
   width: 100%;
-  padding: 0.65rem 0.95rem 0.65rem 2.6rem;
+  padding: 0.65rem 0.95rem;
   font-family: var(--sans);
-  font-size: 0.93rem;
+  font-size: 0.92rem;
   background-color: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -360,19 +387,21 @@
 }
 
 .select-field {
-  padding: 0.6rem 2.2rem 0.6rem 0.85rem;
+  width: 100%;
+  display: block;
+  padding: 0.65rem 2.2rem 0.65rem 0.95rem;
   font-family: var(--sans);
-  font-size: 0.88rem;
+  font-size: 0.9rem;
   background-color: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--text-main);
   cursor: pointer;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236D7971' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236D7971' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  transition: border-color var(--transition-fast);
+  background-position: right 0.85rem center;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .select-field:focus {
@@ -380,6 +409,78 @@
   outline: none;
   box-shadow: 0 0 0 2px rgba(0, 84, 63, 0.12);
 }
+
+.textarea-field {
+  width: 100%;
+  padding: 0.75rem 0.95rem;
+  font-family: var(--sans);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+  resize: vertical;
+  min-height: 85px;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.textarea-field:focus {
+  border-color: var(--primary-green);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 84, 63, 0.12);
+}
+
+.file-input-field {
+  width: 100%;
+  padding: 0.65rem 0.95rem;
+  font-family: var(--sans);
+  font-size: 0.88rem;
+  background-color: var(--bg-card);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.file-input-field:hover,
+.file-input-field:focus {
+  border-color: var(--primary-green);
+  background-color: var(--bg-subtle);
+}
+
+.file-input-field::file-selector-button {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  padding: 0.35rem 0.75rem;
+  margin-right: 0.85rem;
+  font-family: var(--sans);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.file-input-field::file-selector-button:hover {
+  background-color: var(--primary-green);
+  color: #FFFFFF;
+  border-color: var(--primary-green);
+}
+
+.modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-subtle);
+}
+
+
 
 .filter-bar {
   display: flex;
