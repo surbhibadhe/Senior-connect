@@ -12,7 +12,6 @@ SeniorConnect enables students to share, discover, and discuss academic resource
 
 ## Screenshots
 
-Add screenshots of the deployed application to the `screenshots/` directory in the repository, using the filenames below.
 
 ### Landing Page
 <!-- Add a screenshot of the landing page -->
@@ -24,11 +23,11 @@ Add screenshots of the deployed application to the `screenshots/` directory in t
 
 ### Resource Details and Discussions
 <!-- Add a screenshot of a resource detail page and its comments -->
-![Resource Details and Discussions](screenshots/resource-details.png)
+![Resource Details and Discussions](screenshots/discussions.png)
 
 ### Authentication
 <!-- Add a screenshot of the sign-in page -->
-![SeniorConnect Authentication](screenshots/sign-in.png)
+![SeniorConnect Authentication](screenshots/auth.png)
 
 ---
 
