@@ -1,113 +1,258 @@
-# SeniorConnect 🎓
+# SeniorConnect
 
-SeniorConnect is a Spring Boot-based academic resource-sharing platform designed to help college students share and access study materials, including notes, assignments, lab manuals, and previous question papers.
+**A full-stack academic resource-sharing platform connecting college juniors and seniors.**
 
-## 🚀 Features
+SeniorConnect enables students to share, discover, and discuss academic resources, including lecture notes, lab manuals, assignments, previous question papers, and reference materials.
 
-- **Google OAuth 2.0 Authentication** — Secure login using verified college email accounts (`@despu.edu.in`).
-- **Student Reviews & Perspectives Section** — Publicly visible community reviews on the landing page seeded with authentic student stories, with submission restricted to authenticated students.
-- **Reddit-Style Discussion Threads** — Live comment section on every resource with nested replies, upvoting, and markdown-friendly notes.
-- **Role-Based Access** — Supports Junior, Senior, and Admin roles.
-- **Resource Management** — Create, download, bookmark, and mark helpful academic resources through REST APIs.
-- **Category-Based Filtering** — Browse resources by category (Lecture Notes, Lab Manuals, PYQs, etc.).
-- **Modern University Visual Language** — Rebuilt landing page and portals matching DES Pune University aesthetic design reference.
-- **PostgreSQL Integration** — Store user, academic resource, review, and comment data.
-- **CSRF Protection** — Protect state-changing requests.
+**Live Application:** [seniorconnect-edu.vercel.app](https://seniorconnect-edu.vercel.app/)
 
-## 🛠️ Tech Stack
+**Repository:** [github.com/surbhibadhe/Senior-connect](https://github.com/surbhibadhe/Senior-connect)
 
-- **Frontend:** React 18, TypeScript, Vite, React Router 6, Lucide Icons, Plus Jakarta Sans typography
-- **Backend:** Java 25, Spring Boot 4.x
-- **Security:** Spring Security 7, Google OAuth 2.0
-- **Database:** PostgreSQL
-- **ORM:** Spring Data JPA, Hibernate
-- **API:** REST APIs with CSRF support
-- **Build Tool:** Maven & Vite
+---
 
-## 📚 Resource Categories
+## Screenshots
+
+Add screenshots of the deployed application to the `screenshots/` directory in the repository, using the filenames below.
+
+### Landing Page
+<!-- Add a screenshot of the landing page -->
+![SeniorConnect Landing Page](screenshots/landing-page.png)
+
+### Resource Browsing
+<!-- Add a screenshot of the resource listing and category filters -->
+![Resource Browsing](screenshots/resource-browsing.png)
+
+### Resource Details and Discussions
+<!-- Add a screenshot of a resource detail page and its comments -->
+![Resource Details and Discussions](screenshots/resource-details.png)
+
+### Authentication
+<!-- Add a screenshot of the sign-in page -->
+![SeniorConnect Authentication](screenshots/sign-in.png)
+
+---
+
+## Features
+
+- **Google OAuth 2.0 Authentication:** Sign in using verified college accounts restricted to the `@despu.edu.in` domain.
+- **Role-Based Access Control:** Supports Junior, Senior, and Admin roles.
+- **Academic Resource Management:** Create and access resources through REST APIs, including text content, documents, and external links.
+- **Category-Based Filtering:** Browse academic materials by category.
+- **Search and Pagination:** Find relevant resources efficiently.
+- **Bookmarks and Helpfulness Feedback:** Save resources and indicate whether they are useful.
+- **Discussion Threads:** Comment on resources, reply to discussions, and upvote comments.
+- **Student Reviews:** Display student reviews on the landing page and allow authenticated students to submit reviews.
+- **Resource Reporting and Moderation:** Support reporting and administrative review of resources.
+- **CSRF Protection:** Protect state-changing requests against cross-site request forgery.
+- **Persistent Data Storage:** Store user, resource, review, bookmark, and discussion data in PostgreSQL.
+
+## Technology Stack
+
+| Layer | Technologies |
+|---|---|
+| Frontend | React 18, TypeScript, Vite |
+| Routing | React Router 6 |
+| UI Icons | Lucide React |
+| Backend | Java 25, Spring Boot 4.x |
+| Security | Spring Security 7, Google OAuth 2.0 |
+| Persistence | Spring Data JPA, Hibernate |
+| Database | PostgreSQL |
+| API | REST APIs, JSON, CSRF protection |
+| Build Tools | Maven, npm, Vite |
+| Deployment | Vercel, Render, Neon PostgreSQL, Docker |
+
+## Resource Categories
 
 - Notes
 - Lab Manuals
 - Assignments
-- Question Papers (PYQ)
+- Question Papers (PYQs)
 - Reference Materials
 - Textbook Links
 
-## ⚙️ Getting Started
+## Architecture
+
+SeniorConnect follows a layered backend architecture, separating HTTP request handling, business logic, database access, and persistent entities.
+
+```text
+React + TypeScript Frontend
+          |
+          | HTTP / REST API
+          v
+Spring Security
+          |
+          v
+     Controllers
+          |
+          v
+       Services
+          |
+          v
+      Repositories
+          |
+          v
+   Spring Data JPA
+          |
+          v
+      PostgreSQL
+```
+
+The frontend communicates with the Spring Boot backend through REST APIs. Spring Data JPA and Hibernate handle database persistence, while Spring Security manages authentication and request security.
+
+## Project Structure
+
+```text
+Senior-connect/
+├── frontend/
+│   └── src/
+│       ├── components/
+│       ├── hooks/
+│       ├── pages/
+│       └── App.tsx
+├── src/
+│   ├── main/
+│   │   ├── java/com/project/seniorconnect/
+│   │   │   ├── Config/
+│   │   │   ├── Controller/
+│   │   │   ├── DTO/
+│   │   │   ├── Entity/
+│   │   │   ├── Exception/
+│   │   │   ├── Repository/
+│   │   │   └── Service/
+│   │   └── resources/
+│   └── test/
+├── screenshots/
+├── Dockerfile
+├── pom.xml
+└── README.md
+```
+
+## Getting Started
 
 ### Prerequisites
 
 - Java 25 or a compatible configured JDK
-- Node.js 18+ and npm
-- Maven
+- Node.js 18 or later and npm
+- Maven, or the included Maven Wrapper
 - PostgreSQL
-- Google OAuth credentials
+- Google OAuth 2.0 credentials
 
-### Installation
+### 1. Clone the repository
 
-1. Clone the repository:
+```bash
+git clone https://github.com/surbhibadhe/Senior-connect.git
+cd Senior-connect
+```
 
-   ```bash
-   git clone <YOUR_GITHUB_REPOSITORY_URL>
-   ```
+### 2. Configure PostgreSQL
 
-2. Navigate to the project directory:
+Create a PostgreSQL database named `seniorconnect_db`.
 
-   ```bash
-   cd SeniorConnect
-   ```
+Configure the database connection using environment variables:
 
-3. Create a PostgreSQL database named `seniorconnect_db`.
+```text
+SPRING_DATASOURCE_URL
+SPRING_DATASOURCE_USERNAME
+SPRING_DATASOURCE_PASSWORD
+```
 
-4. Configure your database credentials and Google OAuth settings in `src/main/resources/application.properties` or through environment variables.
+### 3. Configure Google OAuth
 
-5. Set your Google OAuth client credentials, including `GOOGLE_CLIENT_SECRET`, in your environment or IDE run configuration.
+Create an OAuth 2.0 client in Google Cloud Console and configure the client ID and client secret.
 
-6. Run the backend application:
+Set the following environment variables:
 
-   ```bash
-   ./mvnw spring-boot:run
-   ```
+```text
+GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET
+```
 
-   On Windows, use:
+Configure the authorized redirect URI to match the backend environment. For the deployed backend, the callback is:
 
-   ```bash
-   mvnw.cmd spring-boot:run
-   ```
+```text
+https://senior-connect-he4r.onrender.com/login/oauth2/code/google
+```
 
-7. In a separate terminal, launch the frontend:
+Never commit client secrets, database passwords, or other credentials to GitHub.
 
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
+### 4. Run the backend
 
-8. Open `http://localhost:5173` to explore the landing page or sign in with your verified college account.
+On macOS or Linux:
 
-## 🔗 API Endpoints
+```bash
+./mvnw spring-boot:run
+```
 
-| Method | Endpoint | Description | Auth Required |
-|---|---|---|---|
-| GET | `/api/csrf` | Retrieve a CSRF token | No |
-| GET | `/api/reviews` | Retrieve all student reviews | No |
-| POST | `/api/reviews` | Submit a new student review | Yes |
-| DELETE | `/api/reviews/{id}` | Delete a review (owner or admin) | Yes |
-| GET | `/api/resources` | Retrieve paginated resources | No |
-| GET | `/api/resources/{id}` | Retrieve a resource by ID | No |
-| POST | `/api/resources` | Create a text, file, or link resource | Yes |
-| GET | `/api/resources/{id}/comments` | Retrieve Reddit-style discussion comments | No |
-| POST | `/api/resources/{id}/comments` | Post a comment or reply | Yes |
-| POST | `/api/resources/{id}/comments/{cid}/upvote` | Upvote a comment | Yes |
-| DELETE | `/api/resources/{id}/comments/{cid}` | Delete a comment | Yes |
+On Windows:
 
-**Note:** State-changing requests (`POST`, `PUT`, `DELETE`) require authentication and a valid CSRF token header (`X-XSRF-TOKEN`).
+```powershell
+.\mvnw.cmd spring-boot:run
+```
 
-## 👩‍💻 Author
+### 5. Run the frontend
+
+Open a separate terminal:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open the local frontend at:
+
+```text
+http://localhost:5173
+```
+
+Ensure the backend CORS configuration, frontend API base URL, OAuth redirect settings, and session-cookie settings are configured for the environment in which the application is running.
+
+## API Endpoints
+
+The following endpoints document the application's resource, review, and discussion APIs. Authentication requirements are summarized below; the exact behavior is determined by the backend security configuration.
+
+### Resources
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/resources` | Retrieve resources with pagination |
+| GET | `/api/resources/{id}` | Retrieve a resource by ID |
+| POST | `/api/resources` | Create a resource |
+| GET | `/api/resources/{id}/comments` | Retrieve resource comments |
+| POST | `/api/resources/{id}/comments` | Add a comment or reply |
+| POST | `/api/resources/{id}/comments/{cid}/upvote` | Upvote a comment |
+| DELETE | `/api/resources/{id}/comments/{cid}` | Delete a comment |
+
+### Reviews
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/reviews` | Retrieve student reviews |
+| POST | `/api/reviews` | Submit a student review |
+| DELETE | `/api/reviews/{id}` | Delete a review, subject to authorization |
+
+### Security
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/csrf` | Retrieve a CSRF token |
+
+State-changing requests such as `POST`, `PUT`, `PATCH`, and `DELETE` must comply with the application's authentication, authorization, and CSRF requirements. Requests protected by CSRF validation must provide the expected token in the `X-XSRF-TOKEN` header.
+
+## Deployment
+
+- **Frontend:** [Vercel](https://vercel.com/)
+- **Backend:** [Render](https://render.com/)
+- **Database:** [Neon PostgreSQL](https://neon.tech/)
+
+Live application: [https://seniorconnect-edu.vercel.app/](https://seniorconnect-edu.vercel.app/)
+
+## Author
 
 **Surbhi Badhe**
 
 - GitHub: [@surbhibadhe](https://github.com/surbhibadhe)
+
 
 ---
 
